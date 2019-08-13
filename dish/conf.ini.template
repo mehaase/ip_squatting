@@ -1,0 +1,10 @@
+[dish]
+
+; This is a comma-delimited list of host headers to ignore. Extraneous whitespace
+; and differences in case are ignored.
+
+ignore_hosts =
+
+; The ARN for the SNS topic that the script should publish to.
+
+sns_id = 
