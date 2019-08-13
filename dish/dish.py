@@ -3,10 +3,13 @@ import os
 from pathlib import Path
 
 import boto3
-from flask import Flask, request
+from flask import Flask, request, Response
+from werkzeug.routing import Rule
 
 
 app = Flask(__name__)
+app.url_map.add(Rule('/', endpoint='index'))
+
 here = Path(__file__).parent
 config = ConfigParser()
 config.read(here / 'conf.ini')
@@ -21,12 +24,16 @@ for host in ignore_hosts:
     print(' -', host)
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def dish(path):
+@app.endpoint('index')
+def dish():
     host = request.headers.get('HOST', '').lower()
     report = host not in ignore_hosts
-    reported = 'reported' if report else 'not reported'
-    r = sns.publish(TopicArn=sns_id, Message='This is a test', Subject='This is subject')
-    print('sns response', r)
-    return f'Your host is "{host}" ({reported})'
+    reported = 'REPORTED' if report else 'NOT REPORTED'
+    message = f'Connection from {request.remote_addr}\n' \
+        f'{request.method} {request.url}\n' \
+        f'{request.headers}' \
+        f'{request.form}'
+    if report:
+        r = sns.publish(TopicArn=sns_id, Message=message)
+        print('sns response', r)
+    return Response(reported + ' ' + message, mimetype='text/plain')
